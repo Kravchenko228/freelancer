@@ -1,12 +1,13 @@
 package com.freelancer;
 
-public class Business {
+import java.io.Serializable;
+
+public class Business implements Serializable {
     private String id;
     private String name;
     private String description;
     private String contactInfo;
 
-    // Getters and setters
     public String getId() {
         return id;
     }

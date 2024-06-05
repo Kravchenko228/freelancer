@@ -1,29 +1,31 @@
 package com.freelancer;
 
 import java.util.List;
-import java.util.Optional;
 
 public class BusinessService {
-    private BusinessRepository businessRepository = new BusinessRepository();
+    private IDAO<Business> businessDao;
+
+    public BusinessService(IDAO<Business> businessDao) {
+        this.businessDao = businessDao;
+    }
 
     public void createBusiness(Business business) {
-        businessRepository.save(business);
-    }
-
-    public Business getBusiness(String id) {
-        Optional<Business> optionalBusiness = businessRepository.findById(id);
-        return optionalBusiness.orElse(null);  
-    }
-
-    public List<Business> getAllBusinesses() {
-        return businessRepository.findAll();
+        businessDao.save(business);
     }
 
     public void updateBusiness(Business business) {
-        businessRepository.update(business);
+        businessDao.update(business);
     }
 
     public void deleteBusiness(String id) {
-        businessRepository.delete(id);
+        businessDao.delete(id);
+    }
+
+    public Business getBusiness(String id) {
+        return businessDao.get(id);
+    }
+
+    public List<Business> getAllBusinesses() {
+        return businessDao.getAll();
     }
 }
