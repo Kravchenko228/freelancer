@@ -1,10 +1,9 @@
 package com.freelancer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,14 +18,55 @@ public class ServerThread extends Thread {
         this.businessService = businessService;
     }
 
+    private void handleStaticFiles(String requestPath, PrintWriter out) {
+        if (requestPath.contains("?")) {
+            requestPath = requestPath.substring(0, requestPath.indexOf('?'));
+        }
+
+        String filePath = "/workspaces/freelancer/freelancer/src/main/java/web" + requestPath;
+        System.out.println("Serving static file: " + filePath);
+
+        String contentType = getContentType(filePath);
+        try (BufferedReader fileReader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            out.print("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n");
+            while ((line = fileReader.readLine()) != null) {
+                out.println(line);
+            }
+            out.flush();
+        } catch (IOException e) {
+            System.err.println("File not found: " + filePath);
+            out.print("HTTP/1.1 404 Not Found\r\n\r\n");
+            out.flush();
+        }
+    }
+
+    private String getContentType(String filePath) {
+        if (filePath.endsWith(".html")) {
+            return "text/html";
+        } else if (filePath.endsWith(".css")) {
+            return "text/css";
+        } else if (filePath.endsWith(".js")) {
+            return "application/javascript";
+        } else {
+            return "text/plain";
+        }
+    }
+
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
             String line;
             StringBuilder request = new StringBuilder();
+            int contentLength = 0;
+
+            // Read the request headers
             while ((line = in.readLine()) != null && !line.isEmpty()) {
                 request.append(line).append("\n");
+                if (line.startsWith("Content-Length:")) {
+                    contentLength = Integer.parseInt(line.substring("Content-Length:".length()).trim());
+                }
             }
 
             System.out.println("Received request: " + request.toString());
@@ -35,41 +75,55 @@ public class ServerThread extends Thread {
             String requestMethod = requestLines[0].split(" ")[0];
             String requestPath = requestLines[0].split(" ")[1];
 
-            if (requestMethod.equals("GET") && requestPath.equals("/")) {
-                out.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-                out.print("<html><body><h1>Welcome to Freelancer</h1></body></html>");
-                out.flush();
-            } else if (requestMethod.equals("POST") && requestPath.equals("/register")) {
-                handleRegister(in, out);
-            } else if (requestMethod.equals("POST") && requestPath.equals("/login")) {
-                handleLogin(in, out);
-            } else if (requestMethod.equals("POST") && requestPath.equals("/createBusiness")) {
-                handleCreateBusiness(in, out);
-            } else if (requestMethod.equals("POST") && requestPath.equals("/updateBusiness")) {
-                handleUpdateBusiness(in, out);
-            } else if (requestMethod.equals("POST") && requestPath.equals("/deleteBusiness")) {
-                handleDeleteBusiness(in, out);
-            } else if (requestMethod.equals("GET") && requestPath.equals("/listBusinesses")) {
-                handleListBusinesses(out);
+            // Read the request payload if it's a POST request
+            if (requestMethod.equals("POST") && contentLength > 0) {
+                char[] payload = new char[contentLength];
+                in.read(payload, 0, contentLength);
+                handlePostRequest(requestPath, new String(payload), out);
             } else {
-                out.print("HTTP/1.1 404 Not Found\r\n\r\n");
-                out.flush();
+                if (requestMethod.equals("GET") && requestPath.equals("/")) {
+                    handleStaticFiles("/index.html", out);
+                } else if (requestMethod.equals("GET") && requestPath.equals("/listBusinesses")) {
+                    handleListBusinesses(out);
+                } else if (requestMethod.equals("GET") && requestPath.startsWith("/")) {
+                    handleStaticFiles(requestPath, out);
+                } else {
+                    out.print("HTTP/1.1 404 Not Found\r\n\r\n");
+                    out.flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleRegister(BufferedReader in, PrintWriter out) throws IOException {
-        StringBuilder payload = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            payload.append(line);
+    private void handlePostRequest(String requestPath, String payload, PrintWriter out) {
+        try {
+            if (requestPath.equals("/register")) {
+                handleRegister(payload, out);
+            } else if (requestPath.equals("/login")) {
+                handleLogin(payload, out);
+            } else if (requestPath.equals("/createBusiness")) {
+                handleCreateBusiness(payload, out);
+            } else if (requestPath.equals("/updateBusiness")) {
+                handleUpdateBusiness(payload, out);
+            } else if (requestPath.equals("/deleteBusiness")) {
+                handleDeleteBusiness(payload, out);
+            } else {
+                out.print("HTTP/1.1 404 Not Found\r\n\r\n");
+                out.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            out.print("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+            out.flush();
         }
+    }
 
-        String[] params = payload.toString().split("&");
-        String username = params[0].split("=")[1];
-        String password = params[1].split("=")[1];
+    private void handleRegister(String payload, PrintWriter out) throws IOException {
+        String[] params = payload.split("&");
+        String username = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
+        String password = URLDecoder.decode(params[1].split("=")[1], StandardCharsets.UTF_8.name());
 
         User user = new User();
         user.setId(UUID.randomUUID().toString());
@@ -81,16 +135,10 @@ public class ServerThread extends Thread {
         out.flush();
     }
 
-    private void handleLogin(BufferedReader in, PrintWriter out) throws IOException {
-        StringBuilder payload = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            payload.append(line);
-        }
-
-        String[] params = payload.toString().split("&");
-        String username = params[0].split("=")[1];
-        String password = params[1].split("=")[1];
+    private void handleLogin(String payload, PrintWriter out) throws IOException {
+        String[] params = payload.split("&");
+        String username = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
+        String password = URLDecoder.decode(params[1].split("=")[1], StandardCharsets.UTF_8.name());
 
         Optional<User> user = userService.login(username, password);
         if (user.isPresent()) {
@@ -101,17 +149,11 @@ public class ServerThread extends Thread {
         out.flush();
     }
 
-    private void handleCreateBusiness(BufferedReader in, PrintWriter out) throws IOException {
-        StringBuilder payload = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            payload.append(line);
-        }
-
-        String[] params = payload.toString().split("&");
-        String name = params[0].split("=")[1];
-        String description = params[1].split("=")[1];
-        String contactInfo = params[2].split("=")[1];
+    private void handleCreateBusiness(String payload, PrintWriter out) throws IOException {
+        String[] params = payload.split("&");
+        String name = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
+        String description = URLDecoder.decode(params[1].split("=")[1], StandardCharsets.UTF_8.name());
+        String contactInfo = URLDecoder.decode(params[2].split("=")[1], StandardCharsets.UTF_8.name());
 
         Business business = new Business();
         business.setId(UUID.randomUUID().toString());
@@ -124,18 +166,12 @@ public class ServerThread extends Thread {
         out.flush();
     }
 
-    private void handleUpdateBusiness(BufferedReader in, PrintWriter out) throws IOException {
-        StringBuilder payload = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            payload.append(line);
-        }
-
-        String[] params = payload.toString().split("&");
-        String id = params[0].split("=")[1];
-        String name = params[1].split("=")[1];
-        String description = params[2].split("=")[1];
-        String contactInfo = params[3].split("=")[1];
+    private void handleUpdateBusiness(String payload, PrintWriter out) throws IOException {
+        String[] params = payload.split("&");
+        String id = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
+        String name = URLDecoder.decode(params[1].split("=")[1], StandardCharsets.UTF_8.name());
+        String description = URLDecoder.decode(params[2].split("=")[1], StandardCharsets.UTF_8.name());
+        String contactInfo = URLDecoder.decode(params[3].split("=")[1], StandardCharsets.UTF_8.name());
 
         Business business = businessService.getBusiness(id);
         if (business != null) {
@@ -150,14 +186,9 @@ public class ServerThread extends Thread {
         out.flush();
     }
 
-    private void handleDeleteBusiness(BufferedReader in, PrintWriter out) throws IOException {
-        StringBuilder payload = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            payload.append(line);
-        }
-
-        String id = payload.toString().split("=")[1];
+    private void handleDeleteBusiness(String payload, PrintWriter out) throws IOException {
+        String[] params = payload.split("&");
+        String id = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
 
         Business business = businessService.getBusiness(id);
         if (business != null) {

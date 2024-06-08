@@ -1,47 +1,58 @@
 package com.freelancer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.*;
+import java.util.*;
 
 public class UserRepository implements IDAO<User> {
-    private List<User> users = new ArrayList<>();
+    private String filePath;
+    private Map<String, User> users = new HashMap<>();
 
-    @Override
-    public void save(User user) {
-        users.add(user);
+    public UserRepository(String filePath) {
+        this.filePath = filePath;
+        loadData();
     }
 
-    @Override
-    public void update(User user) {
-        User existingUser = get(user.getId());
-        if (existingUser != null) {
-            existingUser.setUsername(user.getUsername());
-            existingUser.setPassword(user.getPassword());
+    private void loadData() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            users = (Map<String, User>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            users = new HashMap<>();
+        }
+    }
+
+    private void saveData() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(users);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
+    public void save(User entity) {
+        users.put(entity.getId(), entity);
+        saveData();
+    }
+
+    @Override
+    public void update(User entity) {
+        users.put(entity.getId(), entity);
+        saveData();
+    }
+
+    @Override
     public void delete(String id) {
-        users.removeIf(user -> user.getId().equals(id));
+        users.remove(id);
+        saveData();
     }
 
     @Override
     public User get(String id) {
-        return users.stream()
-                .filter(user -> user.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+        return users.get(id);
     }
 
     @Override
     public List<User> getAll() {
-        return new ArrayList<>(users);
-    }
-
-    public Optional<User> find(String username, String password) {
-        return users.stream()
-                .filter(user -> user.getUsername().equals(username) && user.getPassword().equals(password))
-                .findFirst();
+        return new ArrayList<>(users.values());
     }
 }
