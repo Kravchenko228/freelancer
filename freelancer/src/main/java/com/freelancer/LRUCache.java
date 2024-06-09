@@ -19,16 +19,20 @@ public class LRUCache<K, V> implements IAlgoCache<K, V> {
 
     @Override
     public void put(K key, V value) {
+        System.out.println("putting key: " + key + " value: " + value);
         cache.put(key, value);
     }
 
     @Override
     public V get(K key) {
+        System.out.println("getting key: " + key);
         return cache.get(key);
     }
 
     @Override
     public void remove(K key) {
+        System.out.println("removing key: " + key);
         cache.remove(key);
     }
+    
 }

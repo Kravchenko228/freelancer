@@ -59,6 +59,47 @@ document.getElementById('businessForm').addEventListener('submit', function (e) 
     });
 });
 
+document.getElementById('updateBusinessForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('updateBusinessId').value;
+    const name = document.getElementById('updateBusinessName').value;
+    const description = document.getElementById('updateBusinessDescription').value;
+    const contactInfo = document.getElementById('updateBusinessContact').value;
+
+    fetch('/updateBusiness', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&description=${encodeURIComponent(description)}&contactInfo=${encodeURIComponent(contactInfo)}`
+    }).then(response => {
+        if (response.ok) {
+            alert('Business updated successfully!');
+        } else {
+            alert('Failed to update business!');
+        }
+    });
+});
+
+document.getElementById('deleteBusinessForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('deleteBusinessId').value;
+
+    fetch('/deleteBusiness', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `id=${encodeURIComponent(id)}`
+    }).then(response => {
+        if (response.ok) {
+            alert('Business deleted successfully!');
+        } else {
+            alert('Failed to delete business!');
+        }
+    });
+});
+
 document.getElementById('listBusinesses').addEventListener('click', function () {
     fetch('/listBusinesses')
         .then(response => response.json())

@@ -11,11 +11,15 @@ public class ServerThread extends Thread {
     private Socket socket;
     private UserService userService;
     private BusinessService businessService;
+    private IAlgoCache<String, User> userCache;
+    private IAlgoCache<String, Business> businessCache;
 
-    public ServerThread(Socket socket, UserService userService, BusinessService businessService) {
+    public ServerThread(Socket socket, UserService userService, BusinessService businessService, IAlgoCache<String, User> userCache, IAlgoCache<String, Business> businessCache) {
         this.socket = socket;
         this.userService = userService;
         this.businessService = businessService;
+        this.userCache = userCache;
+        this.businessCache = businessCache;
     }
 
     private void handleStaticFiles(String requestPath, PrintWriter out) {
@@ -142,6 +146,7 @@ public class ServerThread extends Thread {
 
         Optional<User> user = userService.login(username, password);
         if (user.isPresent()) {
+            userCache.put(user.get().getId(), user.get()); 
             out.print("HTTP/1.1 200 OK\r\n\r\n");
         } else {
             out.print("HTTP/1.1 401 Unauthorized\r\n\r\n");
@@ -162,6 +167,7 @@ public class ServerThread extends Thread {
         business.setContactInfo(contactInfo);
         businessService.createBusiness(business);
 
+        businessCache.put(business.getId(), business); 
         out.print("HTTP/1.1 200 OK\r\n\r\n");
         out.flush();
     }
@@ -179,6 +185,8 @@ public class ServerThread extends Thread {
             business.setDescription(description);
             business.setContactInfo(contactInfo);
             businessService.updateBusiness(business);
+
+            businessCache.put(business.getId(), business); 
             out.print("HTTP/1.1 200 OK\r\n\r\n");
         } else {
             out.print("HTTP/1.1 404 Not Found\r\n\r\n");
@@ -193,6 +201,7 @@ public class ServerThread extends Thread {
         Business business = businessService.getBusiness(id);
         if (business != null) {
             businessService.deleteBusiness(id);
+            businessCache.remove(id); 
             out.print("HTTP/1.1 200 OK\r\n\r\n");
         } else {
             out.print("HTTP/1.1 404 Not Found\r\n\r\n");
