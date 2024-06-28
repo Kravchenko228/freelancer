@@ -3,13 +3,17 @@ com/freelancer/Client.class
 com/freelancer/LRUCache$1.class
 com/freelancer/LRUCache.class
 com/freelancer/User.class
+com/freelancer/configuration/PropertiesClass.class
 com/freelancer/RandomCache.class
 com/freelancer/IAlgoCache.class
 com/freelancer/Business.class
+com/freelancer/configuration/Main.class
 com/freelancer/BusinessRepository.class
 com/freelancer/UserRepository.class
 com/freelancer/BusinessService.class
 com/freelancer/App.class
+com/freelancer/configuration/ConfigurationLoader.class
+com/freelancer/configuration/ConfigurationLoaderImpl.class
 com/freelancer/ServerThread.class
 com/freelancer/UserService.class
 com/freelancer/Server.class
