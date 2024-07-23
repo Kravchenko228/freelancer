@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import com.freelancer.controller.Controller;
+
 public class Server {
     private static final int PORT = 8080;
     private UserService userService;

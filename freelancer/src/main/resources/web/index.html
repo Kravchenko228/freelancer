@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freelancer Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Freelancer Management</h1>
+    <div class="form-container">
+        <h2>Register</h2>
+        <form id="registerForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="loginUsername">Username:</label>
+            <input type="text" id="loginUsername" name="username" required>
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" name="password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Create Business</h2>
+        <form id="businessForm">
+            <label for="businessName">Name:</label>
+            <input type="text" id="businessName" name="name" required>
+            <label for="businessDescription">Description:</label>
+            <input type="text" id="businessDescription" name="description" required>
+            <label for="businessContact">Contact Info:</label>
+            <input type="text" id="businessContact" name="contactInfo" required>
+            <button type="submit">Create</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Update Business</h2>
+        <form id="updateBusinessForm">
+            <label for="updateBusinessId">Business ID:</label>
+            <input type="text" id="updateBusinessId" name="id" required>
+            <label for="updateBusinessName">Name:</label>
+            <input type="text" id="updateBusinessName" name="name" required>
+            <label for="updateBusinessDescription">Description:</label>
+            <input type="text" id="updateBusinessDescription" name="description" required>
+            <label for="updateBusinessContact">Contact Info:</label>
+            <input type="text" id="updateBusinessContact" name="contactInfo" required>
+            <button type="submit">Update</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Delete Business</h2>
+        <form id="deleteBusinessForm">
+            <label for="deleteBusinessId">Business ID:</label>
+            <input type="text" id="deleteBusinessId" name="id" required>
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Businesses</h2>
+        <button id="listBusinesses">List All Businesses</button>
+        <div id="businessesList"></div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
