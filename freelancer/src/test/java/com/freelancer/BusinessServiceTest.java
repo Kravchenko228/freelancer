@@ -3,6 +3,11 @@ package com.freelancer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import com.freelancer.dao.IDAO;
+import com.freelancer.dao.BusinessRepository;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -14,61 +19,57 @@ public class BusinessServiceTest {
 
     private BusinessService businessService;
     private IDAO<Business> businessDao;
+    private BusinessRepository businessRepository;
 
     @Before
     public void setUp() {
-        businessDao = Mockito.mock(IDAO.class);
-        businessService = new BusinessService(businessDao);
+        businessRepository = mock(BusinessRepository.class);
+        businessDao = mock(IDAO.class);
+        businessService = new BusinessService(businessRepository);
     }
 
     @Test
     public void testCreateBusiness() {
-        Business business = new Business();
+        Business business = new Business("name", "description", "contactInfo", "ownerUsername");
         business.setId("1");
-        business.setName("Test Business");
-        business.setDescription("Description");
-        business.setContactInfo("Contact");
 
-        doNothing().when(businessDao).save(any(Business.class));
+        doNothing().when(businessRepository).save(any(Business.class));
 
-        businessService.createBusiness(business);
-        verify(businessDao, times(1)).save(business);
+        businessService.addBusiness(business);
+        verify(businessRepository, times(1)).save(business);
     }
 
     @Test
     public void testGetBusiness() {
-        Business business = new Business();
-        business.setId("1");
-        business.setName("Test Business");
-        business.setDescription("Description");
-        business.setContactInfo("Contact");
+        Business business = new Business("1", "Test Business", "description", "contactInfo", "ownerUsername");
 
-        when(businessDao.get(anyString())).thenReturn(business);
+        when(businessRepository.get(anyString())).thenReturn(business);
 
-        Business fetchedBusiness = businessService.getBusiness("1");
-        assertNotNull(fetchedBusiness);
+        Optional<Business> fetchedBusinessOptional = businessService.getBusiness("1");
+        assertTrue(fetchedBusinessOptional.isPresent());
+        Business fetchedBusiness = fetchedBusinessOptional.get();
         assertEquals("Test Business", fetchedBusiness.getName());
     }
 
     @Test
     public void testUpdateBusiness() {
-        Business business = new Business();
+        Business business = new Business("name", "description", "contactInfo", "ownerUsername");
         business.setId("1");
-        business.setName("Test Business");
-        business.setDescription("Description");
-        business.setContactInfo("Contact");
 
-        doNothing().when(businessDao).update(any(Business.class));
+        doNothing().when(businessRepository).update(any(Business.class));
 
         businessService.updateBusiness(business);
-        verify(businessDao, times(1)).update(business);
+        verify(businessRepository, times(1)).update(business);
     }
 
     @Test
     public void testDeleteBusiness() {
-        doNothing().when(businessDao).delete(anyString());
+        Business business = new Business("name", "description", "contactInfo", "ownerUsername");
+        business.setId("1");
 
-        businessService.deleteBusiness("1");
-        verify(businessDao, times(1)).delete("1");
+        doNothing().when(businessRepository).delete(anyString());
+
+        businessService.deleteBusiness(business);
+        verify(businessRepository, times(1)).delete("1");
     }
 }

@@ -7,6 +7,16 @@ public class User implements Serializable {
     private String username;
     private String password;
 
+    // Default constructor
+    public User() {}
+
+    // Constructor with username and password
+    public User(String username, String password) {
+        this.id = java.util.UUID.randomUUID().toString(); // Generate a unique ID
+        this.username = username;
+        this.password = password;
+    }
+
     public String getId() {
         return id;
     }

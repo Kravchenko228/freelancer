@@ -1,4 +1,6 @@
-package com.freelancer;
+package com.freelancer.dao;
+
+import com.freelancer.User;
 
 import java.io.*;
 import java.util.*;
@@ -54,5 +56,15 @@ public class UserRepository implements IDAO<User> {
     @Override
     public List<User> getAll() {
         return new ArrayList<>(users.values());
+    }
+
+    public Optional<User> findUser(String username) {
+        return users.values().stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst();
+    }
+
+    public void saveUser(User user) {
+        save(user);
     }
 }

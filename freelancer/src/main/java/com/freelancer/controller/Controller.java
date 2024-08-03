@@ -83,14 +83,11 @@ public class Controller {
         String[] params = payload.split("&");
         String name = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
         String description = URLDecoder.decode(params[1].split("=")[1], StandardCharsets.UTF_8.name());
-        String contactInfo = URLDecoder.decode(params[2].split("=")[1], StandardCharsets.UTF_8.name());
+        String ownerUsername = URLDecoder.decode(params[2].split("=")[1], StandardCharsets.UTF_8.name());
 
-        Business business = new Business();
+        Business business = new Business(name, description, ownerUsername);
         business.setId(UUID.randomUUID().toString());
-        business.setName(name);
-        business.setDescription(description);
-        business.setContactInfo(contactInfo);
-        businessService.createBusiness(business);
+        businessService.addBusiness(business);
 
         businessCache.put(business.getId(), business);
         out.print("HTTP/1.1 200 OK\r\n\r\n");
@@ -104,8 +101,9 @@ public class Controller {
         String description = URLDecoder.decode(params[2].split("=")[1], StandardCharsets.UTF_8.name());
         String contactInfo = URLDecoder.decode(params[3].split("=")[1], StandardCharsets.UTF_8.name());
 
-        Business business = businessService.getBusiness(id);
-        if (business != null) {
+        Optional<Business> businessOpt = businessService.getBusiness(id);
+        if (businessOpt.isPresent()) {
+            Business business = businessOpt.get();
             business.setName(name);
             business.setDescription(description);
             business.setContactInfo(contactInfo);
@@ -123,9 +121,10 @@ public class Controller {
         String[] params = payload.split("&");
         String id = URLDecoder.decode(params[0].split("=")[1], StandardCharsets.UTF_8.name());
 
-        Business business = businessService.getBusiness(id);
-        if (business != null) {
-            businessService.deleteBusiness(id);
+        Optional<Business> businessOpt = businessService.getBusiness(id);
+        if (businessOpt.isPresent()) {
+            Business business = businessOpt.get();
+            businessService.deleteBusiness(business);
             businessCache.remove(id);
             out.print("HTTP/1.1 200 OK\r\n\r\n");
         } else {
@@ -153,7 +152,7 @@ public class Controller {
         if (requestPath.contains("?")) {
             requestPath = requestPath.substring(0, requestPath.indexOf('?'));
         }
-        String filePath = "src/main/resources/web" + requestPath;
+        String filePath = "freelancer/src/main/resources/web" + requestPath;
         System.out.println("Serving static file: " + filePath);
 
         File file = new File(filePath);
@@ -165,7 +164,6 @@ public class Controller {
         if (file.exists() && file.isFile()) {
             serveFile(file, out);
         } else if (file.exists() && file.isDirectory()) {
-            
             File indexFile = new File(file, "index.html");
             if (indexFile.exists() && indexFile.isFile()) {
                 serveFile(indexFile, out);

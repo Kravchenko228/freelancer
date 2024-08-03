@@ -1,12 +1,13 @@
 package com.freelancer;
 
+import com.freelancer.dao.UserRepository;
+import com.freelancer.dao.BusinessRepository;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import com.freelancer.controller.Controller;
-
-public class Server {
+public class Server implements Runnable {
     private static final int PORT = 8080;
     private UserService userService;
     private BusinessService businessService;
@@ -18,11 +19,12 @@ public class Server {
         BusinessRepository businessRepository = new BusinessRepository(businessFilePath);
         this.userService = new UserService(userRepository);
         this.businessService = new BusinessService(businessRepository);
-        this.userCache = new LRUCache<>(100); 
-        this.businessCache = new LRUCache<>(100); 
+        this.userCache = new LRUCache<>(100);
+        this.businessCache = new LRUCache<>(100);
     }
 
-    public void start() {
+    @Override
+    public void run() {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
             while (true) {
@@ -36,6 +38,6 @@ public class Server {
 
     public static void main(String[] args) {
         Server server = new Server("users.dat", "businesses.dat");
-        server.start();
+        new Thread(server).start();
     }
 }

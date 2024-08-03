@@ -1,7 +1,10 @@
-package com.freelancer;
+package com.freelancer.dao;
+
+import com.freelancer.Business;
 
 import java.io.*;
 import java.util.*;
+
 
 public class BusinessRepository implements IDAO<Business> {
     private String filePath;
@@ -53,6 +56,7 @@ public class BusinessRepository implements IDAO<Business> {
 
     @Override
     public List<Business> getAll() {
+        loadData();
         return new ArrayList<>(businesses.values());
     }
 }

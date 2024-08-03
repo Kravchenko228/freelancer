@@ -1,4 +1,4 @@
-package com.freelancer;
+package com.freelancer.dao;
 
 import java.util.List;
 

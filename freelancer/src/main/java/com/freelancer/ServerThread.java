@@ -1,52 +1,49 @@
 package com.freelancer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-
 import com.freelancer.controller.Controller;
+import com.freelancer.dao.BusinessRepository;
+import com.freelancer.dao.UserRepository;
+
+import java.io.*;
+import java.net.Socket;
+import java.io.IOException;
+
 
 public class ServerThread extends Thread {
     private Socket socket;
-    private Controller controller;
+    private UserService userService;
+    private BusinessService businessService;
+    private IAlgoCache<String, User> userCache;
+    private IAlgoCache<String, Business> businessCache;
 
-    public ServerThread(Socket socket, UserService userService, BusinessService businessService, IAlgoCache<String, User> userCache, IAlgoCache<String, Business> businessCache) {
+    public ServerThread(Socket socket, UserService userService, BusinessService businessService,
+                        IAlgoCache<String, User> userCache, IAlgoCache<String, Business> businessCache) {
         this.socket = socket;
-        this.controller = new Controller(userService, businessService, userCache, businessCache);
+        this.userService = userService;
+        this.businessService = businessService;
+        this.userCache = userCache;
+        this.businessCache = businessCache;
     }
 
+    @Override
     public void run() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
-            String line;
-            StringBuilder request = new StringBuilder();
-            int contentLength = 0;
+            String request = in.readLine();
+            String data = in.readLine();
 
-            while ((line = in.readLine()) != null && !line.isEmpty()) {
-                request.append(line).append("\n");
-                if (line.startsWith("Content-Length:")) {
-                    contentLength = Integer.parseInt(line.substring("Content-Length:".length()).trim());
-                }
-            }
+            UserService userService = new UserService(new UserRepository("users.dat"));
+            BusinessService businessService = new BusinessService(new BusinessRepository("businesses.dat"));
+            IAlgoCache<String, User> userCache = new SimpleCache<>();
+            IAlgoCache<String, Business> businessCache = new SimpleCache<>();
 
-            System.out.println("Received request: " + request.toString());
+            Controller controller = new Controller(userService, businessService, userCache, businessCache);
 
-            String[] requestLines = request.toString().split("\n");
-            String requestMethod = requestLines[0].split(" ")[0];
-            String requestPath = requestLines[0].split(" ")[1];
+            controller.handleRequest(request, data, out);
 
-            // Read the request payload if it's a POST request
-            String payload = "";
-            if (requestMethod.equals("POST") && contentLength > 0) {
-                char[] buffer = new char[contentLength];
-                in.read(buffer);
-                payload = new String(buffer);
-            }
-
-            controller.handleRequest(requestPath, payload, out);
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

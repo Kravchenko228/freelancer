@@ -1,25 +1,29 @@
 package com.freelancer;
 
-import java.util.*;
+import com.freelancer.dao.UserRepository;
+import java.util.Optional;
 
 public class UserService {
-    private IDAO<User> userDAO;
 
-    public UserService(IDAO<User> userDAO) {
-        this.userDAO = userDAO;
-    }
+    private UserRepository userRepository;
 
-    public void register(User user) {
-        userDAO.save(user);
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     public Optional<User> login(String username, String password) {
-        return userDAO.getAll().stream()
-                .filter(user -> user.getUsername().equals(username) && user.getPassword().equals(password))
-                .findFirst();
+        return userRepository.findUser(username)
+                .filter(user -> user.getPassword().equals(password));
     }
 
-    public void updateUser(User user) {
-        userDAO.update(user);
+    public void register(User user) {
+        if (userExists(user.getUsername())) {
+            throw new RuntimeException("User already exists");
+        }
+        userRepository.saveUser(user);
+    }
+
+    public boolean userExists(String username) {
+        return userRepository.findUser(username).isPresent();
     }
 }
